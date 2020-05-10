@@ -4,10 +4,9 @@ class Blockchain:
 
     maxNonce = 2**32
 
-    tail = Block("Genesis") # last block of the chain
-    head = tail # first block of the chain
-
     def __init__(self, diff):
+        self.tail = Block()  # last block of the chain
+        self.head = self.tail  # first block of the chain
         self.diff = diff
         self.target = 2 ** (256 - self.diff)
 
@@ -20,16 +19,17 @@ class Blockchain:
         self.tail = self.tail.next
 
     def mine(self, block, verbose=False):
-        for n in range(self.maxNonce):
-            if int(block.hash(), 16) <= self.target:
-                self.add(block)
-                if verbose: print(block)
-                break
-            else:
-                block.nonce += 1
+        if len(block.transactions) >= Block.min_transactions:
+            for n in range(self.maxNonce):
+                if int(block.hash(), 16) <= self.target:
+                    self.add(block)
+                    if verbose: print(block)
+                    break
+                else:
+                    block.nonce += 1
 
     def printAll(self):
         tmp = self.head
         while tmp is not None:
-            print(tmp)
+            print(tmp.print_values())
             tmp = tmp.next

@@ -1,32 +1,36 @@
-import hashlib
+from Crypto.Hash import SHA256
 import datetime
 
 class Block:
 
-    nonce = 0
-    time = datetime.datetime.now()
-    bnumber = 0
-    data = None
-    next = None
-    hash = None
-    previous_hash = 0x0
+    max_transactions = 10
+    min_transactions = 5
 
-    def __init__(self, data):
-        self.data = data
+    def __init__(self):
+        self.nonce = 0
+        self.time = datetime.datetime.now()
+        self.bnumber = 0
+
+        self.transactions = []
+        self.next = None
+        self.previous_hash = 0x0
 
     def hash(self):
-        h = hashlib.sha256()
-        h.update(
-                str(self.nonce).encode() +
-                str(self.data).encode() +
-                str(self.previous_hash).encode() +
-                str(self.time).encode() +
-                str(self.bnumber).encode()
-                )
+        data = str(self.nonce) + str(self.previous_hash) + str(self.time) + str(self.bnumber)
 
-        return h.hexdigest()
+        for trans in self.transactions:
+            data += trans.to_string()
 
-    def __str__(self):
-        return "Previous Hash: " + str(self.previous_hash) + "\nBlock Hash: " + str(
-                self.hash()) + "\nBlock Number: " + str(self.bnumber) + "\nNonce: " + str(
-                self.nonce) + "\nData: " + str(self.data) + "\n-----------"
+        return SHA256.new(data.encode()).hexdigest()
+
+    def add_transaction(self, transaction):
+        if len(self.transactions) < self.max_transactions and transaction.signature is not None:
+            #TODO: check if sender has enough money
+            self.transactions.append(transaction)
+
+    def print_values(self):
+        ret = "-------"
+        ret += "\nBlock number: " + str(self.bnumber) + "\nTime: " + str(self.time) + "\nNonce: " + str(self.nonce)
+        ret += "\nPrevious Hash: " + str(self.previous_hash) + "\nHash: " + str(self.hash())
+        ret += "\nTransactions count: " + str(len(self.transactions))
+        return ret

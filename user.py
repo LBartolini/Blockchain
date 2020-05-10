@@ -7,7 +7,7 @@ class User:
     User(client) that is able to send money and mine blocks
     '''
 
-    def __init__(self, username):
+    def __init__(self):
         self.public_key = None
         self.private_key = None
 
@@ -17,4 +17,5 @@ class User:
         self.public_key = self.private_key.publickey()
 
     def send(self, destination, amount):
+        #TODO: send a transaction to a specified node in the network
         pass
