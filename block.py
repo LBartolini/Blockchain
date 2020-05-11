@@ -4,7 +4,7 @@ import datetime
 class Block:
 
     max_transactions = 10
-    min_transactions = 5
+    min_transactions = 0
 
     def __init__(self):
         self.nonce = 0
