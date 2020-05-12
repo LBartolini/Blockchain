@@ -23,6 +23,5 @@ class User:
         self.private_key = RSA.generate(1024, rnd)
         self.public_key = self.private_key.publickey()
 
-    def send(self, destination, amount):
-        #TODO: send a transaction to a specified node in the network
+    def send(self, destinations): # destinations: dictionary of wallet and amount
         pass

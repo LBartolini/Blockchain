@@ -2,6 +2,10 @@ from block import *
 
 class Blockchain:
 
+    #TODO: Add waiting set containing block that need to be mined
+    # TODO: Transactions are added to the blockchain wich will check to which block they will be part of
+    # TODO: If a block already contains a transaction where is involved the same wallet, the new one will be part of a new block that is going to be mined after the first one
+
     maxNonce = 2**32
 
     def __init__(self, diff, admin):
