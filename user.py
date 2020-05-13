@@ -8,9 +8,10 @@ class User:
     User(client) that is able to send money and mine blocks
     '''
 
-    def __init__(self):
+    def __init__(self, username=""):
         self.public_key = None
         self.private_key = None
+        self.username = username
 
     def getPBL(self):
         return binascii.hexlify(self.public_key.exportKey(format('DER'))).decode('ascii')

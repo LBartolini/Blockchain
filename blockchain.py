@@ -1,19 +1,23 @@
 from block import *
+from user import *
+from transaction import *
 
 class Blockchain:
 
-    #TODO: Add waiting set containing block that need to be mined
-    # TODO: Transactions are added to the blockchain wich will check to which block they will be part of
-    # TODO: If a block already contains a transaction where is involved the same wallet, the new one will be part of a new block that is going to be mined after the first one
-
     maxNonce = 2**32
 
-    def __init__(self, diff, admin):
+    def __init__(self, diff):
         self.tail = Block(self)  # last block of the chain GENESIS
         self.head = self.tail  # first block of the chain
+
+        # WAITING BUFFERS
+        self.blocks = []
+
         self.diff = diff
         self.target = 2 ** (256 - self.diff)
-        self.admin = admin # admin public key
+
+        self.admin = User() # admin RSA couple
+        self.admin.create_wallet()
 
     def add(self, block):
         block.prev = self.tail
@@ -24,24 +28,62 @@ class Blockchain:
         self.tail = self.tail.next
 
     def getBalance(self, public_key):
-        tmp = self.tail
-        while tmp is not None:
-            for trans in tmp.transactions:
-                if public_key in trans.balances:
-                    return trans.balances[public_key]
-            tmp = tmp.prev
+        block = self.tail
+        while block is not None:
+            if True: # TODO: call the check method of block to verify if everything is ok, in other words, check if this block is trustable
+                for trans in block.transactions:
+                    if public_key in trans.balances:
+                        return trans.balances[public_key]
+                block = block.prev
 
         return 0
 
-    def mine(self, block, verbose=False):
+    def mine(self, verbose=False):
+        # TODO: add miner prize for succesfully mine a block
+
+        block = self.blocks[0]
+        block.signAll()
+
         if len(block.transactions) >= Block.min_transactions:
             for n in range(self.maxNonce):
                 if int(block.hash(), 16) <= self.target:
-                    self.add(block)
+                    self.add(self.blocks.pop(0))
                     if verbose: print(block)
                     break
                 else:
                     block.nonce += 1
+
+    def addTransaction(self, transaction):
+        if len(self.blocks) == 0:
+            self.blocks.append(Block(self))
+            self.blocks[-1].add_transaction(transaction)
+        else:
+            # there is at least one block waiting to be mined
+            found_another = False
+            for bl in self.blocks:
+                found_another = False
+
+                if len(bl.transactions) > bl.max_transactions:
+                    continue
+
+                for trans in bl.transactions:
+                    for key in transaction.getWallets():
+                        if key in trans.getWallets():
+                            found_another = True
+
+                if not found_another:
+                    bl.add_transaction(transaction)
+                    break
+
+            if found_another:
+                # every block has at least something to do with one or more wallets in this new transaction
+                self.blocks.append(Block(self))
+                self.blocks[-1].add_transaction(transaction)
+
+    def addMoney(self, wallet, amount):
+        tr = Transaction(self.admin, {wallet: amount}, self)
+        self.addTransaction(tr)
+        self.mine()
 
     def printTail(self, number=50):
         tmp = self.tail
