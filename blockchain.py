@@ -5,6 +5,8 @@ from transaction import *
 class Blockchain:
 
     maxNonce = 2**32
+    miner_prize = 100
+    halving_block_period = 1000
 
     def __init__(self, diff):
         self.tail = Block(self)  # last block of the chain GENESIS
@@ -28,30 +30,37 @@ class Blockchain:
         self.tail = self.tail.next
 
     def getBalance(self, public_key):
+        # TODO: check balance from blocks that need to be inserted into the chain
+
+        # checking blocks already inside the blockchain
         block = self.tail
         while block is not None:
-            if True: # TODO: call the check method of block to verify if everything is ok, in other words, check if this block is trustable
-                for trans in block.transactions:
+            if True:  # TODO: call the check method of block to verify if everything is ok, in other words, check if this block is trustable
+                for trans in block.transactions[::-1]:
                     if public_key in trans.balances:
                         return trans.balances[public_key]
                 block = block.prev
 
         return 0
 
-    def mine(self, verbose=False):
-        # TODO: add miner prize for succesfully mine a block
+    def mine(self, miner, verbose=False):
+        if len(self.blocks) > 0:
+            block = self.blocks[0]
+            block.signAll()
 
-        block = self.blocks[0]
-        block.signAll()
+            if len(block.transactions) >= Block.min_transactions:
+                for n in range(self.maxNonce):
+                    if int(block.hash(), 16) <= self.target:
+                        self.add(self.blocks.pop(0))
+                        if verbose: print(block)
+                        break
+                    else:
+                        block.nonce += 1
 
-        if len(block.transactions) >= Block.min_transactions:
-            for n in range(self.maxNonce):
-                if int(block.hash(), 16) <= self.target:
-                    self.add(self.blocks.pop(0))
-                    if verbose: print(block)
-                    break
-                else:
-                    block.nonce += 1
+                self.addMoney(miner, self.miner_prize)
+
+                if self.tail.bnumber % self.halving_block_period == 0:
+                    self.miner_prize /= 2
 
     def addTransaction(self, transaction):
         if len(self.blocks) == 0:
@@ -83,7 +92,6 @@ class Blockchain:
     def addMoney(self, wallet, amount):
         tr = Transaction(self.admin, {wallet: amount}, self)
         self.addTransaction(tr)
-        self.mine()
 
     def printTail(self, number=50):
         tmp = self.tail

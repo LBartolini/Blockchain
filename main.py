@@ -35,8 +35,11 @@ bc.addTransaction(tr)
 tr = Transaction(ben, {tom.getPBL(): 5, john.getPBL(): 10}, bc)
 bc.addTransaction(tr)
 
-bc.mine()
-bc.mine()
+bc.mine(ben.getPBL())
+bc.mine(ben.getPBL())
+bc.mine(ben.getPBL())
+bc.mine(ben.getPBL())
+bc.mine(ben.getPBL())
 
 
 bc.printTail()
