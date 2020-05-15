@@ -3,7 +3,7 @@ import datetime
 
 class Block:
 
-    max_transactions = 10
+    max_transactions = 2
     min_transactions = 1
 
     def __init__(self, blockchain):
@@ -37,9 +37,10 @@ class Block:
         return SHA256.new(data.encode()).hexdigest()
 
     def add_transaction(self, transaction):
-        if len(self.transactions) < self.max_transactions:
-                self.transactions.append(transaction)
-                return True
+        if len(self.transactions) < self.max_transactions or transaction.source_pbl_str == self.blockchain.admin.getPBL():
+            self.transactions.append(transaction)
+            return True
+
         return False
 
     def signAll(self):

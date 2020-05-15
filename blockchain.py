@@ -29,8 +29,12 @@ class Blockchain:
         self.tail.next = block
         self.tail = self.tail.next
 
-    def getBalance(self, public_key):
-        # TODO: check balance from blocks that need to be inserted into the chain
+    def getBalance(self, public_key, real=False):
+        if not real:
+            for bl in self.blocks[::-1]: # start to check from the newest added block
+                for trans in bl.transactions[::-1]:
+                    if public_key in trans.balances:
+                        return trans.balances[public_key]
 
         # checking blocks already inside the blockchain
         block = self.tail
@@ -40,15 +44,15 @@ class Blockchain:
                     if public_key in trans.balances:
                         return trans.balances[public_key]
                 block = block.prev
-
         return 0
 
     def mine(self, miner, verbose=False):
         if len(self.blocks) > 0:
             block = self.blocks[0]
-            block.signAll()
 
             if len(block.transactions) >= Block.min_transactions:
+                self.addMoney(miner, self.miner_prize, block)
+                block.signAll()
                 for n in range(self.maxNonce):
                     if int(block.hash(), 16) <= self.target:
                         self.add(self.blocks.pop(0))
@@ -57,41 +61,24 @@ class Blockchain:
                     else:
                         block.nonce += 1
 
-                self.addMoney(miner, self.miner_prize)
-
                 if self.tail.bnumber % self.halving_block_period == 0:
                     self.miner_prize /= 2
 
     def addTransaction(self, transaction):
-        if len(self.blocks) == 0:
-            self.blocks.append(Block(self))
-            self.blocks[-1].add_transaction(transaction)
-        else:
-            # there is at least one block waiting to be mined
-            found_another = False
-            for bl in self.blocks:
-                found_another = False
+        for bl in self.blocks:
+            if not len(bl.transactions) >= bl.max_transactions:
+                bl.add_transaction(transaction)
+                return
 
-                if len(bl.transactions) > bl.max_transactions:
-                    continue
+        self.blocks.append(Block(self))
+        self.blocks[-1].add_transaction(transaction)
 
-                for trans in bl.transactions:
-                    for key in transaction.getWallets():
-                        if key in trans.getWallets():
-                            found_another = True
-
-                if not found_another:
-                    bl.add_transaction(transaction)
-                    break
-
-            if found_another:
-                # every block has at least something to do with one or more wallets in this new transaction
-                self.blocks.append(Block(self))
-                self.blocks[-1].add_transaction(transaction)
-
-    def addMoney(self, wallet, amount):
+    def addMoney(self, wallet, amount, block=None):
         tr = Transaction(self.admin, {wallet: amount}, self)
-        self.addTransaction(tr)
+        if block is None:
+            self.addTransaction(tr)
+        else:
+            block.add_transaction(tr)
 
     def printTail(self, number=50):
         tmp = self.tail
